@@ -31,3 +31,19 @@
 .imported-track-card h3{overflow-wrap:anywhere}
 #importAudioButton{width:100%}
 @media(max-width:480px){.free-ai-link{width:100%}.connection-actions{align-items:stretch;flex-direction:column}.connection-actions button{width:100%}}
+
+
+.gateway-settings{margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:#10121b}
+.gateway-settings h3{font-size:13px;margin:0 0 5px}
+.gateway-settings>p{font-size:11px;color:var(--muted);margin:0 0 13px;line-height:1.6}
+.gateway-actions{display:flex;gap:9px;flex-wrap:wrap}
+.gateway-actions button{min-width:130px}
+.ai-generate-button{width:100%;min-height:48px;font-size:13px;margin-top:4px}
+.ai-generate-button:disabled{opacity:.55;cursor:wait}
+.ai-generation-status{font-size:11px;color:var(--mint);min-height:18px;margin:12px 0}
+.ai-generation-status.error{color:var(--danger)}
+.ai-generated-result{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.ai-generated-result audio{width:100%;margin:6px 0 12px}
+.ai-generated-actions{display:flex;gap:9px;flex-wrap:wrap}
+.ai-generated-actions button{flex:1}
+@media(max-width:480px){.gateway-actions,.ai-generated-actions{flex-direction:column}.gateway-actions button,.ai-generated-actions button{width:100%}}
