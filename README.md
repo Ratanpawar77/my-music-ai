@@ -1,13 +1,14 @@
 # My Music AI — Personal Music Studio
 
-A mobile-first, installable music workspace with an integration path for a self-hosted ACE-Step 1.5 AI music server.
+A mobile-first, installable personal music workspace with an integration path for a self-hosted ACE-Step 1.5 AI music server.
 
 ## Current features
 - Marathi, Hindi and English lyric starter drafts with editable lyrics
 - Song idea, mood, genre, key and tempo controls
 - Procedurally synthesized instrumental sketches using the browser Web Audio API
 - WAV export for generated instrumental sketches
-- Local project library and JSON backup export
+- Local project library with JSON backup export and safe backup restore
+- Automatic current-draft saving and restoration on the same device
 - Lyrics copy and TXT export
 - In-app ACE-Step 1.5 gateway connector with job polling and MP3 playback/download (requires a running GPU model server)
 - Optional manual import of audio created elsewhere
