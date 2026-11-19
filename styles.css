@@ -17,3 +17,17 @@
 .ai-result h3{font-size:13px;margin:0}
 .ai-result audio{width:100%;margin-top:12px}
 @media(max-width:480px){.ai-intro{align-items:flex-start}.ai-symbol{width:42px;height:42px;flex-basis:42px}.connection-actions{align-items:stretch;flex-direction:column}.connection-actions button{width:100%}}
+
+
+.free-ai-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;min-height:42px}
+.free-ai-steps{padding:15px 16px;margin:16px 0;border:1px solid var(--line);border-radius:12px;background:#10121b}
+.free-ai-steps p{margin:0 0 8px;font-size:12px;color:#e7e1ff}
+.free-ai-steps ol{margin:0;padding-left:20px;color:var(--muted);font-size:11px;line-height:1.85}
+.import-panel{border-top:1px solid var(--line);margin-top:20px;padding-top:18px}
+.import-panel h3{font-size:14px;margin:0 0 5px}
+.import-panel>p:not(.status-line){font-size:11px;color:var(--muted);margin:0 0 14px}
+.import-panel audio{display:block;width:100%;margin:14px 0}
+.imported-track-library{grid-template-columns:1fr;margin-top:14px}
+.imported-track-card h3{overflow-wrap:anywhere}
+#importAudioButton{width:100%}
+@media(max-width:480px){.free-ai-link{width:100%}.connection-actions{align-items:stretch;flex-direction:column}.connection-actions button{width:100%}}
