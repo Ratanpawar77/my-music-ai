@@ -274,7 +274,7 @@
       $('importAudioStatus').textContent = 'Choose the audio file you downloaded first.';
       return;
     }
-    const extensionOk = /\\.(mp3|wav|m4a|ogg|aac|flac|opus)$/i.test(file.name);
+    const extensionOk = /\.(mp3|wav|m4a|ogg|aac|flac|opus)$/i.test(file.name);
     if (!file.type.startsWith('audio/') && !extensionOk) {
       $('importAudioStatus').textContent = 'That file does not appear to be an audio file.';
       return;
