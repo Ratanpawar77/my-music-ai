@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "My Music AI - Personal Music Studio",
+  "short_name": "My Music AI",
+  "description": "A private music sketch studio for lyrics, instrumentals and song ideas.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0e15",
+  "theme_color": "#10111a",
+  "categories": ["music", "entertainment", "utilities"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
