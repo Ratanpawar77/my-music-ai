@@ -28,7 +28,7 @@
         <div>
           <p class="eyebrow">YOUR PERSONAL CREATIVE SPACE</p>
           <h1>Turn a feeling into a <span>sound.</span></h1>
-          <p class="hero-copy">Shape a song idea, draft lyrics and create an instrumental sketch. Connect the AI vocals service to generate complete songs.</p>
+          <p class="hero-copy">Shape a song idea, draft lyrics, create instrumentals and bring in complete AI songs with vocals.</p>
         </div>
         <div class="hero-note"><span class="note-symbol">♫</span><span>Made for your ideas.<br><b>No app login needed.</b></span></div>
       </section>
@@ -120,27 +120,27 @@
               <select id="duration"><option value="30">30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds</option></select>
             </div>
           </div>
-          <p class="notice"><b>What this creates:</b> an original synthesized instrumental sketch (drums, bass, chords and melody). It is not a sung vocal track or a neural AI music model. Real AI vocals and full-song generation can be connected in a later secure backend step.</p>
+          <p class="notice"><b>What this creates:</b> an original synthesized instrumental sketch (drums, bass, chords and melody). It is not a sung vocal track or a neural AI music model. For a complete AI song with singing, use the free ACE-Step generator in section 04, then import its MP3 here.</p>
           <p id="audioStatus" class="status-line" role="status">Ready when you are. Generate a preview to hear your arrangement.</p>
         </div>
 
 
         <div class="section-heading section-gap">
-          <div><p class="eyebrow">04 / AI VOCALS STUDIO</p><h2>Generate a complete song</h2></div>
-          <span class="step-tag">ONLINE AI</span>
+          <div><p class="eyebrow">04 / FREE AI SONG GENERATOR</p><h2>Create a complete song</h2></div>
+          <span class="step-tag">NO GENERATION CREDITS</span>
         </div>
         <div class="card ai-card">
           <div class="ai-intro">
             <div class="ai-symbol">♫</div>
             <div>
-              <h3>Real AI singing, not a synthetic sketch</h3>
-              <p>Connect your private Cloudflare Worker to create a full song with AI vocals and instruments. Your lyrics, language and singer preference are sent only when you press Generate.</p>
+              <h3>Full AI songs with singing vocals</h3>
+              <p>Use ACE-Step 1.5 through ACE Music. Create a song there, download its MP3, then import it into your private My Music AI library.</p>
             </div>
           </div>
           <div class="form-grid">
             <div class="field">
-              <label for="aiVoice">Singer</label>
-              <select id="aiVoice">
+              <label for="freeAiVoice">Singer direction</label>
+              <select id="freeAiVoice">
                 <option value="female">Female lead</option>
                 <option value="male">Male lead</option>
                 <option value="duet">Male + female duet</option>
@@ -148,33 +148,41 @@
               </select>
             </div>
             <div class="field">
-              <label>Lyrics language</label>
-              <div class="read-only-field" id="aiLanguageLabel">Marathi (from Song Idea)</div>
+              <label for="freeAiLanguage">Song language</label>
+              <select id="freeAiLanguage">
+                <option value="mr">Marathi</option>
+                <option value="hi">Hindi</option>
+                <option value="en">English</option>
+              </select>
             </div>
           </div>
-          <details class="ai-settings">
-            <summary>Connect your private AI service</summary>
+          <div class="connection-actions">
+            <a class="primary-button free-ai-link" href="https://acemusic.ai/ace-step/" target="_blank" rel="noopener noreferrer">Open free ACE-Step generator ↗</a>
+            <button class="secondary-button" id="copySongPrompt" type="button">Copy song prompt</button>
+            <button class="text-button" id="copyFreeLyrics" type="button">Copy lyrics</button>
+          </div>
+          <div class="free-ai-steps">
+            <p><b>How to make your song</b></p>
+            <ol>
+              <li>Open ACE Music and sign in with a free account.</li>
+              <li>Choose <b>ACE-Step v1.5 XL</b> in the model picker.</li>
+              <li>Paste the copied song prompt into the description, and your lyrics into the lyrics box.</li>
+              <li>Generate the song and download the supported MP3.</li>
+              <li>Return here and import the downloaded audio below.</li>
+            </ol>
+          </div>
+          <p class="notice ai-notice"><b>Free-use note:</b> ACE-Step 1.5 generation does not use credits on ACE Music, and supported MP3 downloads are free. Other models or tools on that site may cost credits. Male/female voice is a prompt direction, not a guaranteed fixed singer. Hindi is listed in the model guide; Marathi is not explicitly named, so test pronunciation before relying on it.</p>
+          <div class="import-panel">
+            <h3>Bring your song into My Music AI</h3>
+            <p>Choose the MP3 you downloaded from ACE Music. It will be saved in this browser on this device.</p>
             <div class="field">
-              <label for="aiWorkerUrl">Cloudflare Worker URL</label>
-              <input id="aiWorkerUrl" type="url" inputmode="url" placeholder="https://your-worker.your-subdomain.workers.dev" autocomplete="url">
+              <label for="importAudioFile">Choose audio file (MP3, WAV, M4A or other audio)</label>
+              <input id="importAudioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg">
             </div>
-            <div class="field">
-              <label for="aiAccessKey">Your private access code</label>
-              <input id="aiAccessKey" type="password" placeholder="The STUDIO_ACCESS_KEY you set in Cloudflare" autocomplete="off">
-            </div>
-            <div class="connection-actions">
-              <button class="secondary-button" id="saveAiSettings" type="button">Save connection</button>
-              <button class="text-button" id="testAiConnection" type="button">Test connection</button>
-            </div>
-            <p class="microcopy">The access code is saved only in this browser. Your Cloudflare AI service credentials stay on the server and must never be added to GitHub files.</p>
-            <p id="aiConnectionStatus" class="status-line" role="status">Not connected yet.</p>
-          </details>
-          <button class="primary-button ai-generate-button" id="generateAiSong" type="button">✦ Generate full AI song</button>
-          <p class="notice ai-notice"><b>Before generating:</b> each successful track is billable (currently listed at about US$0.15 per track). Male/female voice is requested through the prompt, not guaranteed as a fixed voice identity. Marathi and Hindi singing pronunciation can vary, so listen to each result before publishing.</p>
-          <p id="aiStatus" class="status-line" role="status">Connect the AI service above to enable full-song generation.</p>
-          <div id="aiResult" class="ai-result" hidden>
-            <div class="editor-toolbar"><h3>Generated AI song</h3><button class="text-button" id="downloadAiTrack" type="button">Download MP3</button></div>
-            <audio id="aiAudioPlayer" controls preload="metadata"></audio>
+            <button class="primary-button" id="importAudioButton" type="button">Import song to my library</button>
+            <p id="importAudioStatus" class="status-line" role="status">No song imported yet.</p>
+            <audio id="importedTrackPlayer" controls preload="metadata" hidden></audio>
+            <div id="importedTrackLibrary" class="project-list imported-track-library"></div>
           </div>
         </div>
 
@@ -196,7 +204,7 @@
           <div class="guide-item"><span>01</span><div><h3>Write and edit lyrics</h3><p>Create a starter draft in Marathi, Hindi or English, then edit it freely. The starter is rule-based and works offline.</p></div></div>
           <div class="guide-item"><span>02</span><div><h3>Create an instrumental sketch</h3><p>Choose a mood, style, key and tempo. The browser audio engine renders drums, bass, chords and melody and exports a WAV file.</p></div></div>
           <div class="guide-item"><span>03</span><div><h3>Keep your projects private</h3><p>Saved drafts stay in this browser's local storage. There is no account or cloud sync in this version.</p></div></div>
-          <div class="guide-item"><span>04</span><div><h3>Connect real AI singing</h3><p>Deploy the Cloudflare Worker from the repository guide, add the Workers AI binding and private access secret, then enter its URL in the AI Vocals Studio panel. Never paste provider credentials into public front-end files.</p></div></div>
+          <div class="guide-item"><span>04</span><div><h3>Make and import a full AI song</h3><p>Open ACE-Step 1.5 through ACE Music, generate a song and download the MP3. Return to this app and import it into your local audio library.</p></div></div>
         </div>
       </section>
     </main>
