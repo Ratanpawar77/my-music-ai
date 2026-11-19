@@ -2,7 +2,8 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const STORAGE_KEY = 'my_music_ai_projects_v1';
-  const state = { projects: [], currentAudioUrl: null, audioBlob: null, playing: false, deferredInstall: null };
+  const AI_CONFIG_KEY = 'my_music_ai_cloudflare_config_v1';
+  const state = { projects: [], currentAudioUrl: null, audioBlob: null, aiAudioBlob: null, aiAudioUrl: null, playing: false, deferredInstall: null };
   const chordSets = {
     emotional: [[0,3,7],[8,0,3],[5,9,0],[10,2,5]],
     hopeful: [[0,4,7],[7,11,2],[9,0,4],[5,9,0]],
@@ -163,8 +164,133 @@
   }
   function exportProject() { const blob=new Blob([JSON.stringify({app:'My Music AI',version:1,exportedAt:new Date().toISOString(),projects:state.projects},null,2)],{type:'application/json'}); downloadBlob(blob,'my-music-ai-backup.json'); }
   function exportCurrentLyrics() { downloadBlob(new Blob([$('lyrics').value],{type:'text/plain;charset=utf-8'}),( $('songTitle').value.trim()||'lyrics').replace(/[^a-z0-9-_]/gi,'_')+'.txt'); }
+
+  function readAiConfig() {
+    try { const value = JSON.parse(localStorage.getItem(AI_CONFIG_KEY) || '{}'); return value && typeof value === 'object' ? value : {}; }
+    catch (_) { return {}; }
+  }
+  function normalizedWorkerUrl(value) {
+    return String(value || '').trim().replace(/\\/+$/, '');
+  }
+  function saveAiSettings() {
+    const workerUrl = normalizedWorkerUrl($('aiWorkerUrl').value);
+    const accessKey = $('aiAccessKey').value.trim();
+    if (!workerUrl || !accessKey) {
+      $('aiConnectionStatus').textContent = 'Enter both the Worker URL and private access code.';
+      return false;
+    }
+    try {
+      const parsed = new URL(workerUrl);
+      if (parsed.protocol !== 'https:') throw new Error('Use an HTTPS Worker URL.');
+      localStorage.setItem(AI_CONFIG_KEY, JSON.stringify({workerUrl, accessKey}));
+      $('aiWorkerUrl').value = workerUrl;
+      $('aiConnectionStatus').textContent = 'Connection details saved on this device.';
+      $('aiStatus').textContent = 'Ready to test the AI service connection.';
+      return true;
+    } catch (error) {
+      $('aiConnectionStatus').textContent = error.message || 'Could not save connection details.';
+      return false;
+    }
+  }
+  function loadAiSettings() {
+    const config = readAiConfig();
+    $('aiWorkerUrl').value = config.workerUrl || '';
+    $('aiAccessKey').value = config.accessKey || '';
+    updateAiLanguageLabel();
+    if (config.workerUrl && config.accessKey) $('aiConnectionStatus').textContent = 'Saved connection details found on this device. Test before generating.';
+  }
+  function updateAiLanguageLabel() {
+    const select = $('language');
+    $('aiLanguageLabel').textContent = select.options[select.selectedIndex].text + ' (from Song Idea)';
+  }
+  async function testAiConnection() {
+    if (!saveAiSettings()) return;
+    const config = readAiConfig();
+    $('testAiConnection').disabled = true;
+    $('aiConnectionStatus').textContent = 'Checking your Worker…';
+    try {
+      const response = await fetch(config.workerUrl + '/health', {method:'GET', cache:'no-store'});
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok || !data.accessConfigured || !data.aiBindingConfigured) {
+        throw new Error(data.error || 'Worker found, but its AI binding or access secret is not configured.');
+      }
+      $('aiConnectionStatus').textContent = 'Connected. AI music service is ready.';
+      $('aiStatus').textContent = 'Connected. Choose a singer and generate your first full song.';
+    } catch (error) {
+      $('aiConnectionStatus').textContent = error.message || 'Connection failed. Check the Worker URL and deployment.';
+    } finally {
+      $('testAiConnection').disabled = false;
+    }
+  }
+  async function generateAiSong() {
+    const config = readAiConfig();
+    if (!config.workerUrl || !config.accessKey) {
+      $('aiStatus').textContent = 'First open “Connect your private AI service” and save your Worker URL and access code.';
+      return;
+    }
+    const voice = $('aiVoice').value;
+    const lyrics = voice === 'instrumental' ? '' : $('lyrics').value.trim();
+    if (voice !== 'instrumental' && !lyrics) {
+      $('aiStatus').textContent = 'Add lyrics, or leave the lyrics empty to let the AI write them.';
+    }
+    const button = $('generateAiSong');
+    button.disabled = true;
+    button.textContent = 'Creating your AI song…';
+    $('aiStatus').textContent = 'Sending your song brief to MiniMax Music 2.6. This can take a little while and uses paid generation credits.';
+    $('aiResult').hidden = true;
+    try {
+      const payload = {
+        title: $('songTitle').value.trim() || 'Untitled song',
+        idea: $('idea').value.trim(),
+        lyrics,
+        language: $('language').value,
+        mood: $('mood').value,
+        genre: $('genre').value,
+        key: $('key').value,
+        tempo: Number($('tempo').value),
+        voice
+      };
+      const response = await fetch(config.workerUrl + '/generate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Studio-Key':config.accessKey},
+        body:JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        let message = 'AI generation failed. Check the Worker setup and try again.';
+        try { const data = await response.json(); if (data && data.error) message = data.error; } catch (_) {}
+        throw new Error(message);
+      }
+      const blob = await response.blob();
+      if (!blob.size || !blob.type.toLowerCase().includes('audio')) {
+        throw new Error('The AI service did not return an audio file. Check the Worker logs.');
+      }
+      if (state.aiAudioUrl) URL.revokeObjectURL(state.aiAudioUrl);
+      state.aiAudioBlob = blob;
+      state.aiAudioUrl = URL.createObjectURL(blob);
+      $('aiAudioPlayer').src = state.aiAudioUrl;
+      $('aiAudioPlayer').load();
+      $('aiResult').hidden = false;
+      $('aiStatus').textContent = 'Your full AI song is ready. Press Play to listen, then download the MP3.';
+    } catch (error) {
+      $('aiStatus').textContent = error.message || 'Something went wrong while generating the song.';
+    } finally {
+      button.disabled = false;
+      button.textContent = '✦ Generate full AI song';
+    }
+  }
+  function downloadAiSong() {
+    if (!state.aiAudioBlob) return;
+    const title = ($('songTitle').value.trim() || 'my-ai-song').replace(/[^a-z0-9-_]+/gi,'_');
+    downloadBlob(state.aiAudioBlob, title + '.mp3');
+  }
+
   document.querySelectorAll('[data-tab]').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===tab)); ['studio','projects','guide'].forEach(name=>$(name+'Panel').classList.toggle('active',tab.dataset.tab===name)); if(tab.dataset.tab==='projects')renderProjects();}));
   $('generateLyrics').addEventListener('click',lyricStarter);
+  $('saveAiSettings').addEventListener('click',saveAiSettings);
+  $('testAiConnection').addEventListener('click',testAiConnection);
+  $('generateAiSong').addEventListener('click',generateAiSong);
+  $('downloadAiTrack').addEventListener('click',downloadAiSong);
+  $('language').addEventListener('change',updateAiLanguageLabel);
   $('lyrics').addEventListener('input',updateWordCount);
   ['songTitle','mood','genre','key'].forEach(id=>$(id).addEventListener('input',updateMeta));
   $('tempo').addEventListener('input',()=>{$('tempoValue').textContent=$('tempo').value+' BPM';});
@@ -181,6 +307,6 @@
   $('projectList').addEventListener('click',event=>{const load=event.target.closest('[data-load]'),del=event.target.closest('[data-delete]');if(load)loadProject(load.dataset.load);if(del){state.projects=state.projects.filter(p=>p.id!==del.dataset.delete);localStorage.setItem(STORAGE_KEY,JSON.stringify(state.projects));renderProjects();}});
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.deferredInstall=event;$('installButton').hidden=false;});
   $('installButton').addEventListener('click',async()=>{if(!state.deferredInstall)return;state.deferredInstall.prompt();await state.deferredInstall.userChoice;state.deferredInstall=null;$('installButton').hidden=true;});
-  state.projects=readProjects(); renderProjects(); updateMeta(); updateWordCount();
+  state.projects=readProjects(); renderProjects(); updateMeta(); updateWordCount(); loadAiSettings();
   if('serviceWorker' in navigator && location.protocol!=='file:') window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 })();
