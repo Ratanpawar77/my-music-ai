@@ -9,6 +9,7 @@ A mobile-first, installable browser music workspace for personal song ideas.
 - WAV export for generated instrumental sketches
 - Local project library and JSON backup export
 - Lyrics copy and TXT export
+- AI Vocals Studio interface for female, male, duet or instrumental song generation (requires the private Cloudflare Worker setup below)
 - PWA manifest and offline app-shell caching
 - No account or third-party analytics required
 
