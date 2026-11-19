@@ -2,8 +2,7 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const STORAGE_KEY = 'my_music_ai_projects_v1';
-  const AI_CONFIG_KEY = 'my_music_ai_cloudflare_config_v1';
-  const state = { projects: [], currentAudioUrl: null, audioBlob: null, aiAudioBlob: null, aiAudioUrl: null, playing: false, deferredInstall: null };
+  const state = { projects: [], currentAudioUrl: null, audioBlob: null, importedAudioUrl: null, currentImportedTrackId: null, playing: false, deferredInstall: null };
   const chordSets = {
     emotional: [[0,3,7],[8,0,3],[5,9,0],[10,2,5]],
     hopeful: [[0,4,7],[7,11,2],[9,0,4],[5,9,0]],
@@ -165,133 +164,219 @@
   function exportProject() { const blob=new Blob([JSON.stringify({app:'My Music AI',version:1,exportedAt:new Date().toISOString(),projects:state.projects},null,2)],{type:'application/json'}); downloadBlob(blob,'my-music-ai-backup.json'); }
   function exportCurrentLyrics() { downloadBlob(new Blob([$('lyrics').value],{type:'text/plain;charset=utf-8'}),( $('songTitle').value.trim()||'lyrics').replace(/[^a-z0-9-_]/gi,'_')+'.txt'); }
 
-  function readAiConfig() {
-    try { const value = JSON.parse(localStorage.getItem(AI_CONFIG_KEY) || '{}'); return value && typeof value === 'object' ? value : {}; }
-    catch (_) { return {}; }
+
+  const TRACK_DB_NAME = 'my_music_ai_audio_library';
+  const TRACK_STORE_NAME = 'tracks';
+  function openTrackDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) return reject(new Error('This browser does not support local audio storage.'));
+      const request = indexedDB.open(TRACK_DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(TRACK_STORE_NAME)) db.createObjectStore(TRACK_STORE_NAME, {keyPath:'id'});
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Could not open local audio storage.'));
+    });
   }
-  function normalizedWorkerUrl(value) {
-    return String(value || '').trim().replace(/\/+$/, '');
+  async function saveTrackRecord(record) {
+    const db = await openTrackDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(TRACK_STORE_NAME, 'readwrite');
+      tx.objectStore(TRACK_STORE_NAME).put(record);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { const err=tx.error; db.close(); reject(err || new Error('Could not save this audio file.')); };
+      tx.onabort = () => { const err=tx.error; db.close(); reject(err || new Error('Audio save was cancelled.')); };
+    });
   }
-  function saveAiSettings() {
-    const workerUrl = normalizedWorkerUrl($('aiWorkerUrl').value);
-    const accessKey = $('aiAccessKey').value.trim();
-    if (!workerUrl || !accessKey) {
-      $('aiConnectionStatus').textContent = 'Enter both the Worker URL and private access code.';
-      return false;
-    }
+  async function getTrackRecords() {
+    const db = await openTrackDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(TRACK_STORE_NAME, 'readonly');
+      const req = tx.objectStore(TRACK_STORE_NAME).getAll();
+      req.onsuccess = () => { const records=req.result || []; records.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))); resolve(records); };
+      req.onerror = () => reject(req.error || new Error('Could not read the audio library.'));
+      tx.oncomplete = () => db.close();
+      tx.onerror = () => { const err=tx.error; db.close(); reject(err || new Error('Could not read the audio library.')); };
+    });
+  }
+  async function getTrackRecord(id) {
+    const db = await openTrackDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(TRACK_STORE_NAME, 'readonly');
+      const req = tx.objectStore(TRACK_STORE_NAME).get(id);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error || new Error('Could not open this audio file.'));
+      tx.oncomplete = () => db.close();
+      tx.onerror = () => { const err=tx.error; db.close(); reject(err || new Error('Could not open this audio file.')); };
+    });
+  }
+  async function removeTrackRecord(id) {
+    const db = await openTrackDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(TRACK_STORE_NAME, 'readwrite');
+      tx.objectStore(TRACK_STORE_NAME).delete(id);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { const err=tx.error; db.close(); reject(err || new Error('Could not delete this audio file.')); };
+    });
+  }
+  function formatFileSize(bytes) {
+    if (bytes < 1024 * 1024) return Math.max(1, Math.round(bytes / 1024)) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+  function songPromptText() {
+    const langNames = {mr:'Marathi',hi:'Hindi',en:'English'};
+    const mood = moodNames[$('mood').value] || 'Emotional';
+    const genre = genreNames[$('genre').value] || 'Cinematic';
+    const voice = $('freeAiVoice').value;
+    const voiceText = {
+      female:'A clear, expressive solo female lead singer.',
+      male:'A clear, expressive solo male lead singer.',
+      duet:'A male and female duet: alternate verse lines and sing the chorus together.',
+      instrumental:'Instrumental only, with no singing or backing vocals.'
+    }[voice];
+    return [
+      'Create an original complete ' + (langNames[$('freeAiLanguage').value] || 'Marathi') + ' song.',
+      'Title: ' + ($('songTitle').value.trim() || 'Untitled song') + '.',
+      'Music style: ' + genre + '. Mood: ' + mood + '.',
+      'Tempo: approximately ' + $('tempo').value + ' BPM. Musical key: ' + $('key').value + '.',
+      voiceText,
+      'Story and feeling: ' + ($('idea').value.trim() || 'A meaningful emotional journey with a memorable chorus') + '.',
+      'Use natural pronunciation, a memorable melody, polished instrumentation and a complete verse-chorus structure.',
+      'Do not imitate a named artist or existing copyrighted song.'
+    ].join(' ');
+  }
+  async function copySongPrompt() {
     try {
-      const parsed = new URL(workerUrl);
-      if (parsed.protocol !== 'https:') throw new Error('Use an HTTPS Worker URL.');
-      localStorage.setItem(AI_CONFIG_KEY, JSON.stringify({workerUrl, accessKey}));
-      $('aiWorkerUrl').value = workerUrl;
-      $('aiConnectionStatus').textContent = 'Connection details saved on this device.';
-      $('aiStatus').textContent = 'Ready to test the AI service connection.';
-      return true;
-    } catch (error) {
-      $('aiConnectionStatus').textContent = error.message || 'Could not save connection details.';
-      return false;
+      await navigator.clipboard.writeText(songPromptText());
+      $('importAudioStatus').textContent = 'Song prompt copied. Paste it into ACE Music’s description field.';
+    } catch (_) {
+      $('importAudioStatus').textContent = 'Clipboard access failed. Try Copy song prompt again from Chrome.';
     }
   }
-  function loadAiSettings() {
-    const config = readAiConfig();
-    $('aiWorkerUrl').value = config.workerUrl || '';
-    $('aiAccessKey').value = config.accessKey || '';
-    updateAiLanguageLabel();
-    if (config.workerUrl && config.accessKey) $('aiConnectionStatus').textContent = 'Saved connection details found on this device. Test before generating.';
-  }
-  function updateAiLanguageLabel() {
-    const select = $('language');
-    $('aiLanguageLabel').textContent = select.options[select.selectedIndex].text + ' (from Song Idea)';
-  }
-  async function testAiConnection() {
-    if (!saveAiSettings()) return;
-    const config = readAiConfig();
-    $('testAiConnection').disabled = true;
-    $('aiConnectionStatus').textContent = 'Checking your Worker…';
-    try {
-      const response = await fetch(config.workerUrl + '/health', {method:'GET', headers:{'X-Studio-Key':config.accessKey}, cache:'no-store'});
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.ok || !data.accessConfigured || !data.aiBindingConfigured) {
-        throw new Error(data.error || 'Worker found, but its AI binding or access secret is not configured.');
-      }
-      $('aiConnectionStatus').textContent = 'Connected. AI music service is ready.';
-      $('aiStatus').textContent = 'Connected. Choose a singer and generate your first full song.';
-    } catch (error) {
-      $('aiConnectionStatus').textContent = error.message || 'Connection failed. Check the Worker URL and deployment.';
-    } finally {
-      $('testAiConnection').disabled = false;
-    }
-  }
-  async function generateAiSong() {
-    const config = readAiConfig();
-    if (!config.workerUrl || !config.accessKey) {
-      $('aiStatus').textContent = 'First open “Connect your private AI service” and save your Worker URL and access code.';
+  async function copyFreeLyrics() {
+    const lyrics = $('lyrics').value.trim();
+    if (!lyrics) {
+      $('importAudioStatus').textContent = 'There are no lyrics yet. Draft or write lyrics first.';
       return;
     }
-    const voice = $('aiVoice').value;
-    if (!window.confirm('This will request a paid AI music generation. The model is currently listed at about US$0.15 per track, and charges may change. Continue?')) return;
-    const lyrics = voice === 'instrumental' ? '' : $('lyrics').value.trim();
-    if (voice !== 'instrumental' && !lyrics) {
-      $('aiStatus').textContent = 'Add lyrics, or leave the lyrics empty to let the AI write them.';
-    }
-    const button = $('generateAiSong');
-    button.disabled = true;
-    button.textContent = 'Creating your AI song…';
-    $('aiStatus').textContent = 'Sending your song brief to MiniMax Music 2.6. This can take a little while and uses paid generation credits.';
-    $('aiResult').hidden = true;
     try {
-      const payload = {
-        title: $('songTitle').value.trim() || 'Untitled song',
-        idea: $('idea').value.trim(),
-        lyrics,
-        language: $('language').value,
-        mood: $('mood').value,
-        genre: $('genre').value,
-        key: $('key').value,
-        tempo: Number($('tempo').value),
-        voice
-      };
-      const response = await fetch(config.workerUrl + '/generate', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-Studio-Key':config.accessKey},
-        body:JSON.stringify(payload)
+      await navigator.clipboard.writeText(lyrics);
+      $('importAudioStatus').textContent = 'Lyrics copied. Paste them into ACE Music’s lyrics field.';
+    } catch (_) {
+      $('lyrics').select();
+      $('importAudioStatus').textContent = 'Select and copy the lyrics manually.';
+    }
+  }
+  async function importAudioTrack() {
+    const file = $('importAudioFile').files && $('importAudioFile').files[0];
+    if (!file) {
+      $('importAudioStatus').textContent = 'Choose the audio file you downloaded first.';
+      return;
+    }
+    const extensionOk = /\\.(mp3|wav|m4a|ogg|aac|flac|opus)$/i.test(file.name);
+    if (!file.type.startsWith('audio/') && !extensionOk) {
+      $('importAudioStatus').textContent = 'That file does not appear to be an audio file.';
+      return;
+    }
+    if (file.size > 80 * 1024 * 1024) {
+      $('importAudioStatus').textContent = 'This file is larger than 80 MB. Choose a smaller audio download.';
+      return;
+    }
+    const button = $('importAudioButton');
+    button.disabled = true;
+    $('importAudioStatus').textContent = 'Saving audio to this device…';
+    try {
+      await saveTrackRecord({
+        id: crypto.randomUUID(),
+        name: file.name,
+        type: file.type || 'audio/mpeg',
+        size: file.size,
+        createdAt: new Date().toISOString(),
+        blob: file
       });
-      if (!response.ok) {
-        let message = 'AI generation failed. Check the Worker setup and try again.';
-        try { const data = await response.json(); if (data && data.error) message = data.error; } catch (_) {}
-        throw new Error(message);
-      }
-      const blob = await response.blob();
-      if (!blob.size || !blob.type.toLowerCase().includes('audio')) {
-        throw new Error('The AI service did not return an audio file. Check the Worker logs.');
-      }
-      if (state.aiAudioUrl) URL.revokeObjectURL(state.aiAudioUrl);
-      state.aiAudioBlob = blob;
-      state.aiAudioUrl = URL.createObjectURL(blob);
-      $('aiAudioPlayer').src = state.aiAudioUrl;
-      $('aiAudioPlayer').load();
-      $('aiResult').hidden = false;
-      $('aiStatus').textContent = 'Your full AI song is ready. Press Play to listen, then download the MP3.';
+      $('importAudioFile').value = '';
+      $('importAudioStatus').textContent = 'Song imported successfully and saved in this browser on this device.';
+      await renderImportedTracks();
     } catch (error) {
-      $('aiStatus').textContent = error.message || 'Something went wrong while generating the song.';
+      $('importAudioStatus').textContent = error && error.name === 'QuotaExceededError'
+        ? 'This device is low on browser storage. Delete old imported tracks or free device space.'
+        : (error.message || 'Could not import this track.');
     } finally {
       button.disabled = false;
-      button.textContent = '✦ Generate full AI song';
     }
   }
-  function downloadAiSong() {
-    if (!state.aiAudioBlob) return;
-    const title = ($('songTitle').value.trim() || 'my-ai-song').replace(/[^a-z0-9-_]+/gi,'_');
-    downloadBlob(state.aiAudioBlob, title + '.mp3');
+  async function playImportedTrack(id) {
+    try {
+      const track = await getTrackRecord(id);
+      if (!track || !track.blob) throw new Error('This audio file is no longer in the library.');
+      if (state.importedAudioUrl) URL.revokeObjectURL(state.importedAudioUrl);
+      state.importedAudioUrl = URL.createObjectURL(track.blob);
+      state.currentImportedTrackId = id;
+      const player = $('importedTrackPlayer');
+      player.src = state.importedAudioUrl;
+      player.hidden = false;
+      player.load();
+      await player.play();
+      $('importAudioStatus').textContent = 'Now playing: ' + track.name;
+    } catch (error) {
+      $('importAudioStatus').textContent = error.message || 'Could not play this track in the browser.';
+    }
   }
-
+  async function downloadImportedTrack(id) {
+    try {
+      const track = await getTrackRecord(id);
+      if (!track || !track.blob) throw new Error('This audio file is no longer in the library.');
+      downloadBlob(track.blob, track.name || 'my-ai-song.mp3');
+    } catch (error) {
+      $('importAudioStatus').textContent = error.message || 'Could not download this track.';
+    }
+  }
+  async function deleteImportedTrack(id) {
+    if (!window.confirm('Delete this imported song from this device?')) return;
+    try {
+      await removeTrackRecord(id);
+      if (state.currentImportedTrackId === id) {
+        $('importedTrackPlayer').pause();
+        $('importedTrackPlayer').removeAttribute('src');
+        $('importedTrackPlayer').hidden = true;
+        state.currentImportedTrackId = null;
+        if (state.importedAudioUrl) URL.revokeObjectURL(state.importedAudioUrl);
+        state.importedAudioUrl = null;
+      }
+      $('importAudioStatus').textContent = 'Imported track deleted from this device.';
+      await renderImportedTracks();
+    } catch (error) {
+      $('importAudioStatus').textContent = error.message || 'Could not delete this track.';
+    }
+  }
+  async function renderImportedTracks() {
+    const container = $('importedTrackLibrary');
+    try {
+      const tracks = await getTrackRecords();
+      container.innerHTML = tracks.length ? tracks.map(track =>
+        '<article class="project-card imported-track-card"><h3>' + escapeHtml(track.name) + '</h3>' +
+        '<p>' + formatFileSize(track.size) + ' · Added ' + new Date(track.createdAt).toLocaleDateString() + '</p>' +
+        '<div class="project-actions"><button type="button" data-track-play="' + escapeHtml(track.id) + '">Play</button>' +
+        '<button type="button" data-track-download="' + escapeHtml(track.id) + '">Download</button>' +
+        '<button type="button" data-track-delete="' + escapeHtml(track.id) + '" class="delete-button">Delete</button></div></article>'
+      ).join('') : '<div class="empty-state">No imported songs yet. Download a song from ACE-Step, then import it here.</div>';
+    } catch (error) {
+      container.innerHTML = '<div class="empty-state">Local audio storage is not available in this browser.</div>';
+      $('importAudioStatus').textContent = error.message || 'Could not load your audio library.';
+    }
+  }
   document.querySelectorAll('[data-tab]').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===tab)); ['studio','projects','guide'].forEach(name=>$(name+'Panel').classList.toggle('active',tab.dataset.tab===name)); if(tab.dataset.tab==='projects')renderProjects();}));
   $('generateLyrics').addEventListener('click',lyricStarter);
-  $('saveAiSettings').addEventListener('click',saveAiSettings);
-  $('testAiConnection').addEventListener('click',testAiConnection);
-  $('generateAiSong').addEventListener('click',generateAiSong);
-  $('downloadAiTrack').addEventListener('click',downloadAiSong);
-  $('language').addEventListener('change',updateAiLanguageLabel);
+  $('copySongPrompt').addEventListener('click',copySongPrompt);
+  $('copyFreeLyrics').addEventListener('click',copyFreeLyrics);
+  $('importAudioButton').addEventListener('click',importAudioTrack);
+  $('importedTrackLibrary').addEventListener('click',event=>{
+    const play=event.target.closest('[data-track-play]'), download=event.target.closest('[data-track-download]'), del=event.target.closest('[data-track-delete]');
+    if(play) playImportedTrack(play.dataset.trackPlay);
+    if(download) downloadImportedTrack(download.dataset.trackDownload);
+    if(del) deleteImportedTrack(del.dataset.trackDelete);
+  });
   $('lyrics').addEventListener('input',updateWordCount);
   ['songTitle','mood','genre','key'].forEach(id=>$(id).addEventListener('input',updateMeta));
   $('tempo').addEventListener('input',()=>{$('tempoValue').textContent=$('tempo').value+' BPM';});
@@ -308,6 +393,6 @@
   $('projectList').addEventListener('click',event=>{const load=event.target.closest('[data-load]'),del=event.target.closest('[data-delete]');if(load)loadProject(load.dataset.load);if(del){state.projects=state.projects.filter(p=>p.id!==del.dataset.delete);localStorage.setItem(STORAGE_KEY,JSON.stringify(state.projects));renderProjects();}});
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.deferredInstall=event;$('installButton').hidden=false;});
   $('installButton').addEventListener('click',async()=>{if(!state.deferredInstall)return;state.deferredInstall.prompt();await state.deferredInstall.userChoice;state.deferredInstall=null;$('installButton').hidden=true;});
-  state.projects=readProjects(); renderProjects(); updateMeta(); updateWordCount(); loadAiSettings();
+  state.projects=readProjects(); renderProjects(); updateMeta(); updateWordCount(); renderImportedTracks();
   if('serviceWorker' in navigator && location.protocol!=='file:') window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 })();
