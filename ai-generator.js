@@ -52,10 +52,14 @@
     try {
       $("testAiConnection").disabled = true;
       setStatus("Checking your AI server…");
+      const key = appKey();
       const response = await fetch(baseUrl() + "/api/health", { cache: "no-store" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) throw new Error(data.detail || "The model server is not ready.");
-      setStatus("Connected. " + (data.model_server || "ACE-Step") + " is responding. You can generate a song.");
+      const protectedCheck = await fetch(baseUrl() + "/api/ready", { headers: { "X-App-Key": key }, cache: "no-store" });
+      const protectedData = await protectedCheck.json().catch(() => ({}));
+      if (!protectedCheck.ok || !protectedData.ok) throw new Error(protectedData.detail || "The gateway access key was rejected.");
+      setStatus("Connected. " + (data.model_server || "ACE-Step") + " and your private gateway key are responding.");
     } catch (error) {
       setStatus(error.message + " Check the URL, gateway and CORS settings.", true);
     } finally {
