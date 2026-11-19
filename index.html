@@ -134,7 +134,7 @@
             <div class="ai-symbol">♫</div>
             <div>
               <h3>Full AI songs with singing vocals</h3>
-              <p>Use ACE-Step 1.5 through ACE Music. Create a song there, download its MP3, then import it into your private My Music AI library.</p>
+              <p>Connect your own ACE-Step 1.5 model server and generate a complete song here. The generated MP3 can be downloaded or saved into your existing local library.</p>
             </div>
           </div>
           <div class="form-grid">
@@ -156,22 +156,50 @@
               </select>
             </div>
           </div>
-          <div class="connection-actions">
-            <a class="primary-button free-ai-link" href="https://acemusic.ai/ace-step/" target="_blank" rel="noopener noreferrer">Open free ACE-Step generator ↗</a>
-            <button class="secondary-button" id="copySongPrompt" type="button">Copy song prompt</button>
-            <button class="text-button" id="copyFreeLyrics" type="button">Copy lyrics</button>
+          <div class="gateway-settings">
+            <h3>Connect your AI model server</h3>
+            <p>This is the real AI connection. The model server and secure gateway must be running before generation is available. Your key is kept in this browser session and is never committed to GitHub.</p>
+            <div class="field">
+              <label for="aiServerUrl">Gateway HTTPS URL</label>
+              <input id="aiServerUrl" type="url" placeholder="https://your-private-gateway.example">
+            </div>
+            <div class="field">
+              <label for="aiGatewayKey">Private gateway access key</label>
+              <input id="aiGatewayKey" type="password" autocomplete="off" placeholder="Enter your private key">
+            </div>
+            <div class="gateway-actions">
+              <button class="secondary-button" id="saveAiSettings" type="button">Save connection</button>
+              <button class="secondary-button" id="testAiConnection" type="button">Test server</button>
+              <button class="text-button" id="copySongPrompt" type="button">Copy song prompt</button>
+              <button class="text-button" id="copyFreeLyrics" type="button">Copy lyrics</button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="aiDuration">Song length</label>
+              <select id="aiDuration"><option value="30">30 seconds (quick test)</option><option value="60" selected>60 seconds</option><option value="90">90 seconds</option><option value="120">120 seconds</option><option value="180">180 seconds</option></select>
+            </div>
+          </div>
+          <button class="primary-button ai-generate-button" id="generateAiSong" type="button">♫ Generate full song with AI</button>
+          <p id="aiGenerationStatus" class="ai-generation-status" role="status" aria-live="polite">Not connected yet. Add your gateway URL and key, then test the server.</p>
+          <div id="aiGeneratedResult" class="ai-generated-result" hidden>
+            <h3>Your AI-generated song</h3>
+            <audio id="aiGeneratedPlayer" controls preload="metadata"></audio>
+            <div class="ai-generated-actions">
+              <button class="secondary-button" id="downloadGeneratedSong" type="button">Download MP3</button>
+              <button class="primary-button" id="saveGeneratedSong" type="button">Save to my library</button>
+            </div>
           </div>
           <div class="free-ai-steps">
-            <p><b>How to make your song</b></p>
+            <p><b>How this works</b></p>
             <ol>
-              <li>Open ACE Music and sign in with a free account.</li>
-              <li>Choose <b>ACE-Step v1.5 XL</b> in the model picker.</li>
-              <li>Paste the copied song prompt into the description, and your lyrics into the lyrics box.</li>
-              <li>Generate the song and download the supported MP3.</li>
-              <li>Return here and import the downloaded audio below.</li>
+              <li>ACE-Step 1.5 runs on a GPU computer or server that you control.</li>
+              <li>The small gateway in this repository securely connects the app to that model.</li>
+              <li>Set the gateway URL and private key above, then test the connection.</li>
+              <li>Generate a song, listen to it here, and save the MP3 into your local library.</li>
             </ol>
           </div>
-          <p class="notice ai-notice"><b>Free-use note:</b> ACE-Step 1.5 generation does not use credits on ACE Music, and supported MP3 downloads are free. Other models or tools on that site may cost credits. Male/female voice is a prompt direction, not a guaranteed fixed singer. Hindi is listed in the model guide; Marathi is not explicitly named, so test pronunciation before relying on it.</p>
+          <p class="notice ai-notice"><b>Honest status:</b> The app interface and API connection are being prepared, but generation will not work until a live ACE-Step GPU server and gateway are running. Free GPU availability is not guaranteed. The app does not use a paid music API.</p>
           <div class="import-panel">
             <h3>Bring your song into My Music AI</h3>
             <p>Choose the MP3 you downloaded from ACE Music. It will be saved in this browser on this device.</p>
@@ -213,5 +241,6 @@
   </div>
   <audio id="audioPlayer" preload="none"></audio>
   <script src="./app.js" defer></script>
+  <script src="./ai-generator.js" defer></script>
 </body>
 </html>
