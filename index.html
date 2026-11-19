@@ -216,8 +216,11 @@
 
         <div class="save-row">
           <button class="secondary-button" id="saveProject" type="button">Save project</button>
-          <button class="primary-button" id="exportProject" type="button">Export project JSON</button>
+          <button class="primary-button" id="exportProject" type="button">Export backup</button>
+          <button class="secondary-button" id="importProjectButton" type="button">Restore backup</button>
+          <input id="importProjectFile" type="file" accept="application/json,.json" hidden>
         </div>
+        <p id="draftSaveStatus" class="microcopy" role="status">Your current draft is saved automatically on this device.</p>
       </section>
 
       <section id="projectsPanel" class="panel">
@@ -237,7 +240,7 @@
       </section>
     </main>
 
-    <footer><span>MY MUSIC STUDIO</span><span>Personal project · v2.0</span></footer>
+    <footer><span>MY MUSIC STUDIO</span><span>Personal project · v2.1</span></footer>
   </div>
   <audio id="audioPlayer" preload="none"></audio>
   <script src="./app.js" defer></script>
