@@ -35,8 +35,13 @@ Serve this folder over localhost (for example, with VS Code Live Server). Servic
 - service-worker.js — offline app shell
 - icon.svg — app icon
 
-## AI vocals upgrade (v2)
 
-A Cloudflare Worker integration for MiniMax Music 2.6 is included in `cloudflare-worker/`. Follow `cloudflare-worker/README.md` to deploy it, add the Workers AI binding named `AI`, and create the private secret `STUDIO_ACCESS_KEY`. Then configure the Worker URL and access code in the app's AI Vocals Studio panel. Do not add service credentials to public files.
+## Free full-song workflow
 
-The AI music model generates billable tracks (currently listed at about US$0.15 each). Male/female/duet choices are prompt directions, not guaranteed voice identities; Marathi and Hindi pronunciation may vary.
+My Music AI uses ACE Music's hosted ACE-Step 1.5 experience for free AI song generation. Open https://acemusic.ai/ace-step/ from section 04 in the app, sign in with a free account, select ACE-Step v1.5 XL, paste the song prompt and lyrics, generate, and download the supported MP3. Return to My Music AI and import the file into the local audio library.
+
+ACE-Step 1.5 generation on ACE Music does not consume generation credits. Supported MP3 downloads are free. Other models and features on ACE Music may use credits or require a paid plan. See the provider's live pricing and terms before use.
+
+The app does not call an undocumented ACE Music API or proxy. The generated song is transferred into the app by the user's normal MP3 download and file import. Imported tracks are stored in this browser's IndexedDB on this device; they are not cloud-synced. Browser storage can be cleared by the user or operating system, so keep separate copies of important MP3 files.
+
+The open-source ACE-Step project also provides a REST API, but it is designed for a self-hosted ACE-Step server. It requires suitable compute hardware. A free Google Colab runtime is not a suitable always-on backend for this app: Colab documents dynamic, non-guaranteed GPU availability and disallows using free managed runtimes primarily as a web service.
