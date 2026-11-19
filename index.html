@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#10111a">
+  <meta name="description" content="A private, mobile-first music sketch studio. Write lyrics, shape an instrumental and export your ideas.">
+  <title>My Music AI — Personal Music Studio</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="My Music AI home">
+        <span class="brand-mark">♫</span>
+        <span>my music <b>studio</b></span>
+      </a>
+      <div class="topbar-actions">
+        <span class="local-pill"><i></i> PRIVATE WORKSPACE</span>
+        <button class="icon-button" id="installButton" type="button" hidden aria-label="Install app">＋</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">YOUR PERSONAL CREATIVE SPACE</p>
+          <h1>Turn a feeling into a <span>sound.</span></h1>
+          <p class="hero-copy">Shape a song idea, draft lyrics and create an original instrumental sketch right in your browser.</p>
+        </div>
+        <div class="hero-note"><span class="note-symbol">♫</span><span>Made for your ideas.<br><b>No account needed.</b></span></div>
+      </section>
+
+      <nav class="tabs" aria-label="Main navigation">
+        <button class="tab active" data-tab="studio" type="button">Studio</button>
+        <button class="tab" data-tab="projects" type="button">My projects <span id="projectCount" class="count">0</span></button>
+        <button class="tab" data-tab="guide" type="button">How it works</button>
+      </nav>
+
+      <section id="studioPanel" class="panel active">
+        <div class="section-heading">
+          <div><p class="eyebrow">01 / SONG IDEA</p><h2>Set the direction</h2></div>
+          <span class="step-tag">START HERE</span>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="songTitle">Song title</label>
+            <input id="songTitle" maxlength="70" value="A New Beginning" placeholder="Give your song a name">
+          </div>
+          <div class="field">
+            <label for="idea">What is this song about?</label>
+            <textarea id="idea" rows="3" maxlength="500" placeholder="Example: A person who faces difficult days but never gives up...">A person who faces difficult days, keeps believing in themselves and works towards a better future.</textarea>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="language">Lyrics language</label>
+              <select id="language"><option value="mr">Marathi</option><option value="hi">Hindi</option><option value="en">English</option></select>
+            </div>
+            <div class="field">
+              <label for="mood">Mood</label>
+              <select id="mood"><option value="emotional">Sad / Emotional</option><option value="hopeful">Hopeful</option><option value="romantic">Romantic</option><option value="energetic">Energetic</option><option value="devotional">Devotional</option><option value="peaceful">Peaceful</option></select>
+            </div>
+            <div class="field">
+              <label for="genre">Music style</label>
+              <select id="genre"><option value="cinematic">Cinematic</option><option value="acoustic">Acoustic</option><option value="lofi">Lo-fi</option><option value="pop">Pop</option><option value="folk">Folk-inspired</option><option value="ambient">Ambient</option></select>
+            </div>
+            <div class="field">
+              <label for="key">Musical key</label>
+              <select id="key"><option>C</option><option>C#</option><option>D</option><option>D#</option><option>E</option><option>F</option><option>F#</option><option>G</option><option>G#</option><option>A</option><option>A#</option><option>B</option></select>
+            </div>
+          </div>
+          <button class="primary-button" id="generateLyrics" type="button"><span>✦</span> Draft lyrics</button>
+          <p class="microcopy">The lyric starter runs locally using editable writing patterns. It does not call an online AI service.</p>
+        </div>
+
+        <div class="section-heading section-gap">
+          <div><p class="eyebrow">02 / YOUR WORDS</p><h2>Shape the lyrics</h2></div>
+          <span class="step-tag">EDIT ANYTHING</span>
+        </div>
+        <div class="card">
+          <div class="editor-toolbar">
+            <label for="lyrics">Lyrics draft</label>
+            <div class="inline-actions">
+              <button class="text-button" id="copyLyrics" type="button">Copy</button>
+              <button class="text-button" id="downloadLyrics" type="button">Save .txt</button>
+            </div>
+          </div>
+          <textarea id="lyrics" class="lyrics-editor" rows="15" spellcheck="true" placeholder="Your lyrics will appear here. You can edit every line."></textarea>
+          <div class="editor-footer"><span id="wordCount">0 words</span><button class="quiet-button" id="clearLyrics" type="button">Clear lyrics</button></div>
+        </div>
+
+        <div class="section-heading section-gap">
+          <div><p class="eyebrow">03 / INSTRUMENTAL SKETCH</p><h2>Build your sound</h2></div>
+          <span class="step-tag">BROWSER AUDIO</span>
+        </div>
+        <div class="card sound-card">
+          <div class="sound-intro">
+            <div class="cover-art"><span>♫</span><small>YOUR SOUND</small></div>
+            <div class="sound-info"><p class="eyebrow">INSTRUMENTAL PREVIEW</p><h3 id="trackTitle">A New Beginning</h3><p id="trackMeta">Cinematic · Emotional · C minor feel</p><span class="engine-label"><i></i> Procedural audio engine</span></div>
+          </div>
+          <div class="waveform" id="waveform" aria-label="Generated audio waveform">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="time-row"><span id="playTime">00:00</span><span id="totalTime">00:30</span></div>
+          <div class="progress-track"><span id="progressBar"></span></div>
+          <div class="player-controls">
+            <button class="round-button" id="stopPreview" type="button" aria-label="Stop audio">■</button>
+            <button class="play-button" id="playPreview" type="button"><span>▶</span> Create &amp; play preview</button>
+            <button class="round-button" id="downloadWav" type="button" aria-label="Download WAV" disabled>↓</button>
+          </div>
+          <div class="form-grid audio-settings">
+            <div class="field">
+              <label for="tempo">Tempo <b id="tempoValue">82 BPM</b></label>
+              <input id="tempo" type="range" min="55" max="145" value="82">
+            </div>
+            <div class="field">
+              <label for="duration">Sketch length</label>
+              <select id="duration"><option value="30">30 seconds</option><option value="45">45 seconds</option><option value="60">60 seconds</option></select>
+            </div>
+          </div>
+          <p class="notice"><b>What this creates:</b> an original synthesized instrumental sketch (drums, bass, chords and melody). It is not a sung vocal track or a neural AI music model. Real AI vocals and full-song generation can be connected in a later secure backend step.</p>
+          <p id="audioStatus" class="status-line" role="status">Ready when you are. Generate a preview to hear your arrangement.</p>
+        </div>
+
+        <div class="save-row">
+          <button class="secondary-button" id="saveProject" type="button">Save project</button>
+          <button class="primary-button" id="exportProject" type="button">Export project JSON</button>
+        </div>
+      </section>
+
+      <section id="projectsPanel" class="panel">
+        <div class="section-heading"><div><p class="eyebrow">YOUR LIBRARY</p><h2>Saved projects</h2></div><span class="step-tag">ON THIS DEVICE</span></div>
+        <div id="projectList" class="project-list"></div>
+        <p class="microcopy">Projects are stored in this browser on this device. Export a JSON backup before clearing browser data or changing devices.</p>
+      </section>
+
+      <section id="guidePanel" class="panel">
+        <div class="section-heading"><div><p class="eyebrow">A QUICK NOTE</p><h2>What works today</h2></div></div>
+        <div class="card guide-card">
+          <div class="guide-item"><span>01</span><div><h3>Write and edit lyrics</h3><p>Create a starter draft in Marathi, Hindi or English, then edit it freely. The starter is rule-based and works offline.</p></div></div>
+          <div class="guide-item"><span>02</span><div><h3>Create an instrumental sketch</h3><p>Choose a mood, style, key and tempo. The browser audio engine renders drums, bass, chords and melody and exports a WAV file.</p></div></div>
+          <div class="guide-item"><span>03</span><div><h3>Keep your projects private</h3><p>Saved drafts stay in this browser's local storage. There is no account or cloud sync in this version.</p></div></div>
+          <div class="guide-item"><span>04</span><div><h3>Real AI singing is a separate upgrade</h3><p>AI-generated vocals and full songs require a compatible generation service and a secure server-side connection. Never paste a private API key into a public front-end file.</p></div></div>
+        </div>
+      </section>
+    </main>
+
+    <footer><span>MY MUSIC STUDIO</span><span>Personal project · v1.0</span></footer>
+  </div>
+  <audio id="audioPlayer" preload="none"></audio>
+  <script src="./app.js" defer></script>
+</body>
+</html>
