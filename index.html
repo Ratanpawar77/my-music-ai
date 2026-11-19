@@ -124,6 +124,60 @@
           <p id="audioStatus" class="status-line" role="status">Ready when you are. Generate a preview to hear your arrangement.</p>
         </div>
 
+
+        <div class="section-heading section-gap">
+          <div><p class="eyebrow">04 / AI VOCALS STUDIO</p><h2>Generate a complete song</h2></div>
+          <span class="step-tag">ONLINE AI</span>
+        </div>
+        <div class="card ai-card">
+          <div class="ai-intro">
+            <div class="ai-symbol">♫</div>
+            <div>
+              <h3>Real AI singing, not a synthetic sketch</h3>
+              <p>Connect your private Cloudflare Worker to create a full song with AI vocals and instruments. Your lyrics, language and singer preference are sent only when you press Generate.</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="aiVoice">Singer</label>
+              <select id="aiVoice">
+                <option value="female">Female lead</option>
+                <option value="male">Male lead</option>
+                <option value="duet">Male + female duet</option>
+                <option value="instrumental">Instrumental only</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Lyrics language</label>
+              <div class="read-only-field" id="aiLanguageLabel">Marathi (from Song Idea)</div>
+            </div>
+          </div>
+          <details class="ai-settings">
+            <summary>Connect your private AI service</summary>
+            <div class="field">
+              <label for="aiWorkerUrl">Cloudflare Worker URL</label>
+              <input id="aiWorkerUrl" type="url" inputmode="url" placeholder="https://your-worker.your-subdomain.workers.dev" autocomplete="url">
+            </div>
+            <div class="field">
+              <label for="aiAccessKey">Your private access code</label>
+              <input id="aiAccessKey" type="password" placeholder="The STUDIO_ACCESS_KEY you set in Cloudflare" autocomplete="off">
+            </div>
+            <div class="connection-actions">
+              <button class="secondary-button" id="saveAiSettings" type="button">Save connection</button>
+              <button class="text-button" id="testAiConnection" type="button">Test connection</button>
+            </div>
+            <p class="microcopy">The access code is saved only in this browser. Your Cloudflare AI service credentials stay on the server and must never be added to GitHub files.</p>
+            <p id="aiConnectionStatus" class="status-line" role="status">Not connected yet.</p>
+          </details>
+          <button class="primary-button ai-generate-button" id="generateAiSong" type="button">✦ Generate full AI song</button>
+          <p class="notice ai-notice"><b>Before generating:</b> each successful track is billable (currently listed at about US$0.15 per track). Male/female voice is requested through the prompt, not guaranteed as a fixed voice identity. Marathi and Hindi singing pronunciation can vary, so listen to each result before publishing.</p>
+          <p id="aiStatus" class="status-line" role="status">Connect the AI service above to enable full-song generation.</p>
+          <div id="aiResult" class="ai-result" hidden>
+            <div class="editor-toolbar"><h3>Generated AI song</h3><button class="text-button" id="downloadAiTrack" type="button">Download MP3</button></div>
+            <audio id="aiAudioPlayer" controls preload="metadata"></audio>
+          </div>
+        </div>
+
         <div class="save-row">
           <button class="secondary-button" id="saveProject" type="button">Save project</button>
           <button class="primary-button" id="exportProject" type="button">Export project JSON</button>
