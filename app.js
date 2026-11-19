@@ -2,6 +2,8 @@
   'use strict';
   const $ = (id) => document.getElementById(id);
   const STORAGE_KEY = 'my_music_ai_projects_v1';
+  const DRAFT_KEY = 'my_music_ai_current_draft_v1';
+  let draftSaveTimer = null;
   const state = { projects: [], currentAudioUrl: null, audioBlob: null, importedAudioUrl: null, currentImportedTrackId: null, playing: false, deferredInstall: null };
   const chordSets = {
     emotional: [[0,3,7],[8,0,3],[5,9,0],[10,2,5]],
@@ -20,6 +22,88 @@
     return { id: crypto.randomUUID(), title: $('songTitle').value.trim() || 'Untitled song', idea: $('idea').value.trim(), language: $('language').value, mood: $('mood').value, genre: $('genre').value, key: $('key').value, tempo: Number($('tempo').value), duration: Number($('duration').value), lyrics: $('lyrics').value, updatedAt: new Date().toISOString() };
   }
   function setStatus(message) { $('audioStatus').textContent = message; }
+  function saveCurrentDraft() {
+    try {
+      const draft = {
+        title: $('songTitle').value, idea: $('idea').value, language: $('language').value,
+        mood: $('mood').value, genre: $('genre').value, key: $('key').value,
+        tempo: $('tempo').value, duration: $('duration').value, lyrics: $('lyrics').value,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      const status = $('draftSaveStatus');
+      if (status) status.textContent = 'Draft saved on this device · ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    } catch (error) {
+      const status = $('draftSaveStatus');
+      if (status) status.textContent = 'Automatic draft save unavailable. Use Export backup to keep your work.';
+    }
+  }
+  function scheduleDraftSave() {
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(saveCurrentDraft, 350);
+  }
+  function restoreCurrentDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (!draft || typeof draft !== 'object') return;
+      $('songTitle').value = typeof draft.title === 'string' ? draft.title : $('songTitle').value;
+      $('idea').value = typeof draft.idea === 'string' ? draft.idea : '';
+      $('language').value = ['mr','hi','en'].includes(draft.language) ? draft.language : 'mr';
+      $('mood').value = Object.prototype.hasOwnProperty.call(moodNames,draft.mood) ? draft.mood : 'emotional';
+      $('genre').value = Object.prototype.hasOwnProperty.call(genreNames,draft.genre) ? draft.genre : 'cinematic';
+      $('key').value = keyNames.includes(draft.key) ? draft.key : 'C';
+      $('tempo').value = String(Math.min(145,Math.max(55,Number(draft.tempo)||82)));
+      $('duration').value = ['30','45','60'].includes(String(draft.duration)) ? String(draft.duration) : '30';
+      $('lyrics').value = typeof draft.lyrics === 'string' ? draft.lyrics : '';
+      if ($('draftSaveStatus')) $('draftSaveStatus').textContent = 'Your previous draft was restored from this device.';
+    } catch (error) {
+      console.warn('Could not restore the current draft:', error);
+    }
+  }
+  function importProjectBackup(file) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setStatus('Backup is larger than 5 MB. Choose a smaller JSON backup.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const backup = JSON.parse(String(reader.result || ''));
+        if (!backup || backup.app !== 'My Music AI' || !Array.isArray(backup.projects)) {
+          throw new Error('This file is not a My Music AI project backup.');
+        }
+        const incoming = backup.projects.filter(p => p && typeof p === 'object' &&
+          typeof p.title === 'string' && typeof p.lyrics === 'string' &&
+          typeof p.id === 'string').slice(0,500);
+        if (!incoming.length && backup.projects.length) throw new Error('No valid projects were found in this backup.');
+        const byId = new Map(state.projects.map(p => [p.id,p]));
+        incoming.forEach(p => byId.set(p.id, {
+          id: p.id, title: p.title.slice(0,70), idea: String(p.idea || '').slice(0,500),
+          language: ['mr','hi','en'].includes(p.language) ? p.language : 'mr',
+          mood: Object.prototype.hasOwnProperty.call(moodNames,p.mood) ? p.mood : 'emotional',
+          genre: Object.prototype.hasOwnProperty.call(genreNames,p.genre) ? p.genre : 'cinematic',
+          key: keyNames.includes(p.key) ? p.key : 'C',
+          tempo: Math.min(145,Math.max(55,Number(p.tempo)||82)),
+          duration: [30,45,60].includes(Number(p.duration)) ? Number(p.duration) : 30,
+          lyrics: p.lyrics.slice(0,20000),
+          updatedAt: typeof p.updatedAt === 'string' ? p.updatedAt : new Date().toISOString()
+        }));
+        state.projects = Array.from(byId.values()).sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state.projects));
+        renderProjects();
+        setStatus('Backup restored. ' + incoming.length + ' project(s) imported; existing projects were kept.');
+      } catch (error) {
+        setStatus(error.message || 'Could not restore this backup.');
+      } finally {
+        $('importProjectFile').value = '';
+      }
+    };
+    reader.onerror = () => { setStatus('Could not read that backup file.'); $('importProjectFile').value = ''; };
+    reader.readAsText(file);
+  }
   function updateWordCount() { const n = $('lyrics').value.trim().split(/\s+/).filter(Boolean).length; $('wordCount').textContent = n + (n === 1 ? ' word' : ' words'); }
   function updateMeta() {
     $('trackTitle').textContent = $('songTitle').value.trim() || 'Untitled song';
@@ -377,7 +461,9 @@
     if(download) downloadImportedTrack(download.dataset.trackDownload);
     if(del) deleteImportedTrack(del.dataset.trackDelete);
   });
-  $('lyrics').addEventListener('input',updateWordCount);
+  $('lyrics').addEventListener('input',()=>{updateWordCount();scheduleDraftSave();});
+  ['songTitle','idea','language','mood','genre','key','tempo','duration'].forEach(id=>$(id).addEventListener('input',scheduleDraftSave));
+  ['language','mood','genre','key','duration'].forEach(id=>$(id).addEventListener('change',scheduleDraftSave));
   ['songTitle','mood','genre','key'].forEach(id=>$(id).addEventListener('input',updateMeta));
   $('tempo').addEventListener('input',()=>{$('tempoValue').textContent=$('tempo').value+' BPM';});
   $('playPreview').addEventListener('click',()=>{if(state.audioBlob && $('audioPlayer').paused){$('audioPlayer').play();return;}createPreview();});
@@ -387,12 +473,14 @@
   $('downloadWav').addEventListener('click',()=>{if(state.audioBlob)downloadBlob(state.audioBlob,( $('songTitle').value.trim()||'instrumental').replace(/[^a-z0-9-_]/gi,'_')+'.wav');});
   $('saveProject').addEventListener('click',saveProject);
   $('exportProject').addEventListener('click',exportProject);
+  $('importProjectButton').addEventListener('click',()=>$('importProjectFile').click());
+  $('importProjectFile').addEventListener('change',event=>importProjectBackup(event.target.files && event.target.files[0]));
   $('copyLyrics').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('lyrics').value);setStatus('Lyrics copied to clipboard.');}catch(_){$('lyrics').select();setStatus('Select and copy the lyrics manually.');}});
   $('downloadLyrics').addEventListener('click',exportCurrentLyrics);
   $('clearLyrics').addEventListener('click',()=>{if(confirm('Clear the current lyrics?')){$('lyrics').value='';updateWordCount();}});
   $('projectList').addEventListener('click',event=>{const load=event.target.closest('[data-load]'),del=event.target.closest('[data-delete]');if(load)loadProject(load.dataset.load);if(del){state.projects=state.projects.filter(p=>p.id!==del.dataset.delete);localStorage.setItem(STORAGE_KEY,JSON.stringify(state.projects));renderProjects();}});
   window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();state.deferredInstall=event;$('installButton').hidden=false;});
   $('installButton').addEventListener('click',async()=>{if(!state.deferredInstall)return;state.deferredInstall.prompt();await state.deferredInstall.userChoice;state.deferredInstall=null;$('installButton').hidden=true;});
-  state.projects=readProjects(); renderProjects(); updateMeta(); updateWordCount(); renderImportedTracks();
+  state.projects=readProjects(); restoreCurrentDraft(); renderProjects(); updateMeta(); updateWordCount(); renderImportedTracks();
   if('serviceWorker' in navigator && location.protocol!=='file:') window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 })();
