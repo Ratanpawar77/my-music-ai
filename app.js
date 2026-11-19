@@ -209,7 +209,7 @@
     $('testAiConnection').disabled = true;
     $('aiConnectionStatus').textContent = 'Checking your Worker…';
     try {
-      const response = await fetch(config.workerUrl + '/health', {method:'GET', cache:'no-store'});
+      const response = await fetch(config.workerUrl + '/health', {method:'GET', headers:{'X-Studio-Key':config.accessKey}, cache:'no-store'});
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok || !data.accessConfigured || !data.aiBindingConfigured) {
         throw new Error(data.error || 'Worker found, but its AI binding or access secret is not configured.');
@@ -229,6 +229,7 @@
       return;
     }
     const voice = $('aiVoice').value;
+    if (!window.confirm('This will request a paid AI music generation. The model is currently listed at about US$0.15 per track, and charges may change. Continue?')) return;
     const lyrics = voice === 'instrumental' ? '' : $('lyrics').value.trim();
     if (voice !== 'instrumental' && !lyrics) {
       $('aiStatus').textContent = 'Add lyrics, or leave the lyrics empty to let the AI write them.';
