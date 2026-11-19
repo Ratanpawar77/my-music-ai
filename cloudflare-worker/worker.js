@@ -56,10 +56,13 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname === "/health" && request.method === "GET") {
+      if (!env.STUDIO_ACCESS_KEY || !safeEqual(request.headers.get("X-Studio-Key") || "", env.STUDIO_ACCESS_KEY)) {
+        return json({ error: "Access denied. Check the private access code saved in the app." }, 401);
+      }
       return json({
         ok: true,
         model: MODEL,
-        accessConfigured: Boolean(env.STUDIO_ACCESS_KEY),
+        accessConfigured: true,
         aiBindingConfigured: Boolean(env.AI)
       });
     }
