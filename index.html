@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#10111a">
-  <meta name="description" content="A private, mobile-first music sketch studio. Write lyrics, shape an instrumental and export your ideas.">
+  <meta name="description" content="A mobile-first personal music studio for lyrics, instrumentals and AI-generated songs with vocals.">
   <title>My Music AI — Personal Music Studio</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
@@ -28,9 +28,9 @@
         <div>
           <p class="eyebrow">YOUR PERSONAL CREATIVE SPACE</p>
           <h1>Turn a feeling into a <span>sound.</span></h1>
-          <p class="hero-copy">Shape a song idea, draft lyrics and create an original instrumental sketch right in your browser.</p>
+          <p class="hero-copy">Shape a song idea, draft lyrics and create an instrumental sketch. Connect the AI vocals service to generate complete songs.</p>
         </div>
-        <div class="hero-note"><span class="note-symbol">♫</span><span>Made for your ideas.<br><b>No account needed.</b></span></div>
+        <div class="hero-note"><span class="note-symbol">♫</span><span>Made for your ideas.<br><b>No app login needed.</b></span></div>
       </section>
 
       <nav class="tabs" aria-label="Main navigation">
@@ -196,12 +196,12 @@
           <div class="guide-item"><span>01</span><div><h3>Write and edit lyrics</h3><p>Create a starter draft in Marathi, Hindi or English, then edit it freely. The starter is rule-based and works offline.</p></div></div>
           <div class="guide-item"><span>02</span><div><h3>Create an instrumental sketch</h3><p>Choose a mood, style, key and tempo. The browser audio engine renders drums, bass, chords and melody and exports a WAV file.</p></div></div>
           <div class="guide-item"><span>03</span><div><h3>Keep your projects private</h3><p>Saved drafts stay in this browser's local storage. There is no account or cloud sync in this version.</p></div></div>
-          <div class="guide-item"><span>04</span><div><h3>Real AI singing is a separate upgrade</h3><p>AI-generated vocals and full songs require a compatible generation service and a secure server-side connection. Never paste a private API key into a public front-end file.</p></div></div>
+          <div class="guide-item"><span>04</span><div><h3>Connect real AI singing</h3><p>Deploy the Cloudflare Worker from the repository guide, add the Workers AI binding and private access secret, then enter its URL in the AI Vocals Studio panel. Never paste provider credentials into public front-end files.</p></div></div>
         </div>
       </section>
     </main>
 
-    <footer><span>MY MUSIC STUDIO</span><span>Personal project · v1.0</span></footer>
+    <footer><span>MY MUSIC STUDIO</span><span>Personal project · v2.0</span></footer>
   </div>
   <audio id="audioPlayer" preload="none"></audio>
   <script src="./app.js" defer></script>
