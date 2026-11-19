@@ -9,7 +9,7 @@ A mobile-first, installable browser music workspace for personal song ideas.
 - WAV export for generated instrumental sketches
 - Local project library and JSON backup export
 - Lyrics copy and TXT export
-- AI Vocals Studio interface for female, male, duet or instrumental song generation (requires the private Cloudflare Worker setup below)
+- Free ACE-Step 1.5 song-generation handoff, with prompt and lyrics copying
 - PWA manifest and offline app-shell caching
 - No account or third-party analytics required
 
@@ -18,9 +18,9 @@ GitHub Pages URL: https://ratanpawar77.github.io/my-music-ai/
 Enable GitHub Pages in Settings → Pages → Deploy from a branch → main → /(root) if it is not already enabled.
 
 ## Important scope and limitations
-This version is a working local music-sketch studio, not yet a neural AI music generator. Lyric starters use editable local templates. Instrumentals are synthesized in the browser; they are not AI vocals or a commercially produced song.
+This app provides local lyric and instrumental tools plus a handoff to the hosted ACE-Step 1.5 generator. It does not run a neural music model inside GitHub Pages. Full AI songs are generated on ACE Music, then imported into this app.
 
-Real AI full-song generation and singing vocals require a compatible generation provider and a secure server-side integration. Do not put API keys or provider secrets in app.js, HTML, or any public GitHub repository. A future backend should keep secrets server-side and provide rate limits, usage controls and clear provider licensing.
+AI song generation is performed by ACE Music, not by this app's static front end. The app uses the provider's normal website rather than an undocumented API or proxy.
 
 Projects are stored in this browser's local storage. They do not automatically sync between devices. Export the JSON backup regularly.
 
