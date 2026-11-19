@@ -2,7 +2,7 @@
   "id": "./",
   "name": "My Music AI - Personal Music Studio",
   "short_name": "My Music AI",
-  "description": "A private music sketch studio for lyrics, instrumentals and song ideas.",
+  "description": "A personal music studio for lyrics, instrumentals and AI-generated songs.",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
