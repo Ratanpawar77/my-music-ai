@@ -80,6 +80,12 @@ async def health() -> dict[str, Any]:
         raise HTTPException(status_code=503, detail=f"ACE-Step server is not reachable: {exc}") from exc
 
 
+
+
+@app.get("/api/ready", dependencies=[Depends(require_app_key)])
+async def ready() -> dict[str, bool]:
+    return {"ok": True}
+
 @app.post("/api/generate", dependencies=[Depends(require_app_key)])
 async def generate(request: GenerateRequest) -> dict[str, Any]:
     voice_text = {
