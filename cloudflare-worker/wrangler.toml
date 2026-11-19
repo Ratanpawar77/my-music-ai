@@ -1,6 +1,0 @@
-name = "my-music-ai-worker"
-main = "worker.js"
-compatibility_date = "2026-11-19"
-
-[ai]
-binding = "AI"
