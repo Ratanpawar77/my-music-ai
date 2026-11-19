@@ -33,3 +33,9 @@ Serve this folder over localhost (for example, with VS Code Live Server). Servic
 - manifest.json — installable PWA metadata
 - service-worker.js — offline app shell
 - icon.svg — app icon
+
+## AI vocals upgrade (v2)
+
+A Cloudflare Worker integration for MiniMax Music 2.6 is included in `cloudflare-worker/`. Follow `cloudflare-worker/README.md` to deploy it, add the Workers AI binding named `AI`, and create the private secret `STUDIO_ACCESS_KEY`. Then configure the Worker URL and access code in the app's AI Vocals Studio panel. Do not add service credentials to public files.
+
+The AI music model generates billable tracks (currently listed at about US$0.15 each). Male/female/duet choices are prompt directions, not guaranteed voice identities; Marathi and Hindi pronunciation may vary.
