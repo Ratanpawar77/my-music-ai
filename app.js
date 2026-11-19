@@ -170,7 +170,7 @@
     catch (_) { return {}; }
   }
   function normalizedWorkerUrl(value) {
-    return String(value || '').trim().replace(/\\/+$/, '');
+    return String(value || '').trim().replace(/\/+$/, '');
   }
   function saveAiSettings() {
     const workerUrl = normalizedWorkerUrl($('aiWorkerUrl').value);
